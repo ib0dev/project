@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Upload, FileText, ImageIcon, Loader2, AlertCircle } from 'lucide-react'
+import { AlertCircle, FileText, ImageIcon, Loader2, Upload, XCircle } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 interface UploadAreaProps {
-  onFileSelect: (file: File) => void
+  onFileSelect: (file: File | null) => void // allow null for reset
   onExtractText: () => void
   selectedFile: File | null
   extracting: boolean
@@ -55,6 +55,39 @@ export function UploadArea({ onFileSelect, onExtractText, selectedFile, extracti
     onFileSelect(file)
   }
 
+  const handleRemoveFile = () => {
+    onFileSelect(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "" // reset file input
+    }
+  }
+
+  // ✅ Handle Ctrl+V paste
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!e.clipboardData) return
+      for (let i = 0; i < e.clipboardData.items.length; i++) {
+        const item = e.clipboardData.items[i]
+        if (item.type.indexOf("image") === 0) {
+          const file = item.getAsFile()
+          if (file) {
+            handleFileSelect(file)
+
+            // Optionally sync with hidden input for consistency
+            const dt = new DataTransfer()
+            dt.items.add(file)
+            if (fileInputRef.current) {
+              fileInputRef.current.files = dt.files
+            }
+          }
+        }
+      }
+    }
+
+    document.addEventListener("paste", handlePaste)
+    return () => document.removeEventListener("paste", handlePaste)
+  }, [])
+
   return (
     <Card className="shadow-xl border-0">
       <CardHeader>
@@ -82,7 +115,7 @@ export function UploadArea({ onFileSelect, onExtractText, selectedFile, extracti
           <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <div className="space-y-2">
             <p className="text-lg font-medium text-gray-700">
-              Drop your image here, or click to browse
+              Drop your image here, click to browse, <br />or paste with <kbd className="px-1 py-0.5 bg-gray-200 rounded">Ctrl + V</kbd>
             </p>
             <p className="text-sm text-gray-500">
               Supports JPEG, PNG, GIF, BMP (Max 10MB)
@@ -117,14 +150,24 @@ export function UploadArea({ onFileSelect, onExtractText, selectedFile, extracti
                     </p>
                   </div>
                 </div>
-                <Button 
-                  onClick={onExtractText}
-                  disabled={extracting}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                >
-                  {extracting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  {extracting ? 'Extracting...' : 'Extract Text'}
-                </Button>
+                <div className="flex space-x-2">
+                  <Button 
+                    onClick={onExtractText}
+                    disabled={extracting}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    {extracting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    {extracting ? 'Extracting...' : 'Extract Text'}
+                  </Button>
+                  <Button 
+                    onClick={handleRemoveFile}
+                    variant="destructive"
+                    className="flex items-center space-x-1"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>Remove</span>
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
