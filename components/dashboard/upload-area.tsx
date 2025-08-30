@@ -3,7 +3,7 @@
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, FileText, ImageIcon, Loader2, Upload, XCircle } from 'lucide-react'
+import { AlertCircle, ImageIcon, Loader2, Upload, XCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -17,6 +17,7 @@ interface UploadAreaProps {
 
 export function UploadArea({ onFileSelect, onExtractText, selectedFile, extracting, error }: UploadAreaProps) {
   const [dragActive, setDragActive] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null) // ✅ for image preview
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDrag = (e: React.DragEvent) => {
@@ -60,6 +61,7 @@ export function UploadArea({ onFileSelect, onExtractText, selectedFile, extracti
     if (fileInputRef.current) {
       fileInputRef.current.value = "" // reset file input
     }
+    setPreviewUrl(null)
   }
 
   // ✅ Handle Ctrl+V paste
@@ -87,6 +89,21 @@ export function UploadArea({ onFileSelect, onExtractText, selectedFile, extracti
     document.addEventListener("paste", handlePaste)
     return () => document.removeEventListener("paste", handlePaste)
   }, [])
+
+  // ✅ Generate & cleanup preview URL
+  useEffect(() => {
+    if (!selectedFile) {
+      setPreviewUrl(null)
+      return
+    }
+
+    const objectUrl = URL.createObjectURL(selectedFile)
+    setPreviewUrl(objectUrl)
+
+    return () => {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }, [selectedFile])
 
   return (
     <Card className="shadow-xl border-0">
@@ -142,7 +159,14 @@ export function UploadArea({ onFileSelect, onExtractText, selectedFile, extracti
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <FileText className="w-8 h-8 text-blue-600" />
+                  {/* ✅ Image preview */}
+                  {previewUrl && (
+                    <img 
+                      src={previewUrl} 
+                      alt="preview"
+                      className="w-16 h-16 object-cover rounded-lg shadow"
+                    />
+                  )}
                   <div>
                     <p className="font-medium text-gray-900">{selectedFile.name}</p>
                     <p className="text-sm text-gray-500">

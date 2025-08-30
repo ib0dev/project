@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { DashboardHeader } from '@/components/dashboard/dashboard-header'
+import { HistorySidebar } from '@/components/dashboard/history-sidebar'
+import { TextResult } from '@/components/dashboard/text-result'
+import { UploadArea } from '@/components/dashboard/upload-area'
 import { useAuth } from '@/contexts/auth-context'
 import { supabase } from '@/lib/supabase'
+import { OcrApiResponse, OcrResult } from '@/types'
 import { Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { OcrResult, OcrApiResponse } from '@/types'
-import { DashboardHeader } from '@/components/dashboard/dashboard-header'
-import { UploadArea } from '@/components/dashboard/upload-area'
-import { TextResult } from '@/components/dashboard/text-result'
-import { HistorySidebar } from '@/components/dashboard/history-sidebar'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -49,7 +49,7 @@ export default function Dashboard() {
     }
   }
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = (file: File | null) => {
     setSelectedFile(file)
     setExtractedText('')
     setConfidence(0)
